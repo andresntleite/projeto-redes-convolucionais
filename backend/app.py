@@ -5,6 +5,9 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+UPLOAD_FOLDER = "uploads"
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 @app.route("/", methods=["GET"])
 def home():
@@ -19,6 +22,10 @@ def predict():
     
     if arquivo_imagem.filename == "":
         return jsonify({"erro": "Arquivo de imagem inválido"}), 400
+
+
+    caminho_arquivo = os.path.join(UPLOAD_FOLDER, arquivo_imagem.filename)
+    arquivo_imagem.save(caminho_arquivo)
 
 
     return jsonify({
