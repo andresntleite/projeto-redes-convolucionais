@@ -30,17 +30,17 @@ def predict():
     if model is None:
         return jsonify({"erro": "O modelo de IA não está carregado no servidor"}), 500
 
-    if "image" not in request.files:
+    if "image" not in request.files and not request.data:
         return jsonify({"erro": "Nenhuma imagem foi enviada"}), 400
     
-    arquivo_imagem = request.files["image"]
-    
-    if arquivo_imagem.filename == "":
-        return jsonify({"erro": "Arquivo de imagem inválido"}), 400
-
-    
-    caminho_temporario = os.path.join(arquivo_imagem.filename)
-    arquivo_imagem.save(caminho_temporario)
+    caminho_temporario = "foto_temporaria.jpg"
+    if "image" in request.files:
+        arquivo_imagem = request.files["image"]
+        if arquivo_imagem.filename != "":
+            arquivo_imagem.save(caminho_temporario)
+    else:
+        with open(caminho_temporario, "wb") as f:
+            f.write(request.data)
 
     try:
         
