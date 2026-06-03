@@ -10,10 +10,9 @@ CORS(app)
 
 MODEL_PATH = "modelo_ia.h5"
 
-
 if os.path.exists(MODEL_PATH):
     model = tf.keras.models.load_model(MODEL_PATH)
-    print("🤖 Modelo de IA de 3 classes carregado com sucesso pelo Felipe!")
+    print("🤖 Modelo de IA de 3 classes carregado com sucesso!")
 else:
     model = None
     print("⚠️ Atenção: Arquivo modelo_ia.h5 não foi encontrado.")
@@ -50,13 +49,14 @@ def predict():
 
         
         previsoes = model.predict(img_array)
-        
+        # 🔽 ADICIONE ESTA LINHA DE PRINT AQUI:
+        print("📊 Probabilidades brutas da IA:", previsoes[0])
         
         indice_resultado = np.argmax(previsoes[0])
         resultado_final = NOMES_CLASSES[indice_resultado]
         confianca_final = float(previsoes[0][indice_resultado])
 
-       
+        
         os.remove(caminho_temporario)
 
         return jsonify({

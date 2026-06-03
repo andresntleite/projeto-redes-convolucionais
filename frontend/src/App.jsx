@@ -1,68 +1,97 @@
-import { useState } from "react";
-import axios from "axios";
+import React, { useState } from "react";
 
 function App() {
   const [imagem, setImagem] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [resultado, setResultado] = useState("");
+  const [resultado, setResultado] = useState(null);
+  const [confianca, setConfianca] = useState(null);
   const [carregando, setCarregando] = useState(false);
 
-  const lidarComImagem = (e) => {
-    const arquivo = e.target.files[0];
-    setImagem(arquivo);
-    setPreview(URL.createObjectURL(arquivo));
-    setResultado("");
+  
+  const aoMudarImagem = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setImagem(e.target.files[0]);
+    }
   };
 
-  const enviarImagem = async () => {
-    if (!imagem) return alert("Por favor, selecione uma imagem primeiro!");
-    
+  
+  const enviarParaIA = async () => {
+    if (!imagem) {
+      alert("Selecione uma imagem primeiro!");
+      return;
+    }
+
     setCarregando(true);
-    const formData = new FormData();
-    formData.append("image", imagem);
+    setResultado(null);
 
     try {
-      const response = await axios.post("http://localhost:5000/predict", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
       
-      if (response.data.resultado === "Objeto desconhecido") {
-        setResultado(`Resultado: ${response.data.resultado}`);
+      const resposta = await fetch("http://127.0.0.1:5000/predict", {
+        method: "POST",
+        body: imagem, 
+        headers: {
+          "Content-Type": "image/jpeg",
+        },
+      });
+
+      const dados = await resposta.json();
+
+      if (resposta.ok) {
+        setResultado(dados.resultado);
+        setConfianca((dados.confianca * 100).toFixed(2));
       } else {
-        setResultado(`Resultado: ${response.data.resultado} (${(response.data.confianca * 100).toFixed(2)}%)`);
+        alert("Erro na API: " + dados.erro);
       }
-    } catch (error) {
-      console.error(error);
-      setResultado("Erro ao conectar com o servidor do Back-end.");
+    } catch (erro) {
+      console.error(erro);
+      alert("Não foi possível conectar ao servidor Flask. O Terminal 1 está ligado?");
     } finally {
       setCarregando(false);
     }
   };
 
   return (
-    <div style={{ padding: "40px", fontFamily: "sans-serif", textAlign: "center" }}>
-      <h1>Classificador de Veículos (CNN)</h1>
-      <p>Envie uma foto de Carro, Moto ou Bicicleta</p>
-      
-      <div style={{ margin: "20px 0" }}>
-        <input type="file" accept="image/*" onChange={lidarComImagem} />
+    <div style={{ padding: "40px", fontFamily: "sans-serif", textAlign: "center", backgroundColor: "#1e1e1e", color: "#fff", minHeight: "100vh" }}>
+      <h1>🤖 Detector de Veículos</h1>
+      <p>Classifique imagens entre: Carro, Moto ou Bicicleta</p>
+
+      <div style={{ margin: "30px 0" }}>
+        <input type="file" accept="image/*" onChange={aoMudarImagem} style={{ fontSize: "16px" }} />
       </div>
 
-      {preview && (
+      {imagem && (
         <div style={{ margin: "20px 0" }}>
-          <img src={preview} alt="Preview" style={{ maxWidth: "300px", borderRadius: "8px" }} />
+          <img 
+            src={URL.createObjectURL(imagem)} 
+            alt="Preview" 
+            style={{ maxWidth: "350px", borderRadius: "12px", border: "2px solid #555" }} 
+          />
+          <br />
+          <button 
+            onClick={enviarParaIA} 
+            disabled={carregando}
+            style={{ 
+              padding: "12px 24px", 
+              marginTop: "20px", 
+              cursor: "pointer", 
+              backgroundColor: "#007bff", 
+              color: "#fff", 
+              border: "none", 
+              borderRadius: "6px",
+              fontSize: "16px",
+              fontWeight: "bold"
+            }}
+          >
+            {carregando ? "Analisando imagem..." : "Verificar na IA"}
+          </button>
         </div>
       )}
 
-      <button 
-        onClick={enviarImagem} 
-        disabled={carregando}
-        style={{ marginTop: "10px", padding: "10px 20px", fontSize: "16px", cursor: "pointer" }}
-      >
-        {carregando ? "Classificando..." : "Classificar Imagem"}
-      </button>
-
-      {resultado && <h2 style={{ marginTop: "20px", color: "#007bff" }}>{resultado}</h2>}
+      {resultado && (
+        <div style={{ marginTop: "30px", padding: "20px", background: "#2d2d2d", borderRadius: "8px", display: "inline-block", border: "1px solid #444" }}>
+          <h2 style={{ margin: "0 0 10px 0" }}>Resultado: <span style={{ color: "#00cbff", textTransform: "uppercase" }}>{resultado}</span></h2>
+          <h3 style={{ margin: "0", color: "#aaa" }}>Confiança: {confianca}%</h3>
+        </div>
+      )}
     </div>
   );
 }
